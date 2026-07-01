@@ -1,5 +1,5 @@
 # BlueStamp Self Driving Robotic Car
-Replace this text with a brief description (2-3 sentences) of your project. This description should draw the reader in and make them interested in what you've built. You can include what the biggest challenges, takeaways, and triumphs from completing the project were. As you complete your portfolio, remember your audience is less familiar than you are with all that your project entails!
+This project is a self driving car that works by using infared sensors and an ultrasonic sensor, that are all connected to an Arduino Uno r3, to make the car be able to detect obsticals infront of it. One issue that I faced while making this project was that the sensors weren't doing the best job at sensing objects and the car would sometimes get stuck. I fixed this by making a pseudo lidar out of ultrasonic senors that were doing a much better job at detecting objects.
 
 You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:
 ```HTML 

@@ -1,11 +1,6 @@
 # BlueStamp Self Driving Robotic Car
 This project is a self driving car that works by using infared sensors and an ultrasonic sensor, that are all connected to an Arduino Uno r3, to make the car be able to detect obsticals infront of it. One issue that I faced while making this project was that the sensors weren't doing the best job at sensing objects and the car would sometimes get stuck. I fixed this by making a pseudo lidar out of ultrasonic senors that were doing a much better job at detecting objects.
 
-You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:
-```HTML 
-<!--- This is an HTML comment in Markdown -->
-<!--- Anything between these symbols will not render on the published site -->
-```
 
 | **Engineer** | **School** | **Area of Interest** | **Grade** |
 |:--:|:--:|:--:|:--:|

@@ -54,108 +54,123 @@ Here's where you'll put images of your schematics. [Tinkercad](https://www.tinke
 Here's where you'll put your code. The syntax below places it into a block of code. Follow the guide [here]([url](https://www.markdownguide.org/extended-syntax/)) to learn how to customize it to your project needs. 
 
 ```c++
-const int A_1B = 5;
-const int A_1A = 6;
-const int B_1B = 9;
-const int B_1A = 10;
+#include <Servo.h>
 
-const int echoPin = 4;
-const int trigPin = 3;
+Servo myServo;
 
-const int rightIR = 7;
-const int leftIR = 8;
+long duration;
 
-float readSensorData() {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  float distance = pulseIn(echoPin, HIGH) / 58.00; //Equivalent to (340m/s*1us)/2
-  return distance;
-}
+int distance1;
+int distance2;
+int distance3;
+int distance4;
 
+const int trigPin1 = 12;
+const int echoPin1 = 13;
 
-void moveForward(int speed) {
-  analogWrite(A_1B, 0);
-  analogWrite(A_1A, speed);
-  analogWrite(B_1B, speed);
-  analogWrite(B_1A, 0);
-}
+const int trigPin2 = 8;
+const int echoPin2 = 9;
 
-void moveBackward(int speed) {
-  analogWrite(A_1B, speed);
-  analogWrite(A_1A, 0);
-  analogWrite(B_1B, 0);
-  analogWrite(B_1A, speed);
-}
+const int trigPin3 = 10;
+const int echoPin3 = 11;
 
-
-void backLeft(int speed) {
-  analogWrite(A_1B, speed);
-  analogWrite(A_1A, 0);
-  analogWrite(B_1B, 0);
-  analogWrite(B_1A, 0);
-}
-
-void backRight(int speed) {
-  analogWrite(A_1B, 0);
-  analogWrite(A_1A, 0);
-  analogWrite(B_1B, 0);
-  analogWrite(B_1A, speed);
-}
-
-void stopMove() {
-  analogWrite(A_1B, 0);
-  analogWrite(A_1A, 0);
-  analogWrite(B_1B, 0);
-  analogWrite(B_1A, 0);
-}
+const int trigPin4 = 44;
+const int echoPin4 = 45;
 
 void setup() {
   Serial.begin(9600);
+  myServo.attach(7);    
+  
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
 
-  //motor
-  pinMode(A_1B, OUTPUT);
-  pinMode(A_1A, OUTPUT);
-  pinMode(B_1B, OUTPUT);
-  pinMode(B_1A, OUTPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
 
-  //ultrasonic
-  pinMode(echoPin, INPUT);
-  pinMode(trigPin, OUTPUT);
+  pinMode(trigPin3, OUTPUT);
+  pinMode(echoPin3, INPUT);
 
-  //IR obstacle
-  pinMode(leftIR, INPUT);
-  pinMode(rightIR, INPUT);
+  pinMode(trigPin4, OUTPUT);
+  pinMode(echoPin4, INPUT);
 }
 
 void loop() {
+  for (int i = 0; i<90; i+=5){
+    myServo.write(i);
+    delay(250);
+    
+    
+    
+    digitalWrite(trigPin1, LOW);
+    delayMicroseconds(2);
 
-  int left = digitalRead(leftIR);  // 0: Obstructed   1: Empty
-  int right = digitalRead(rightIR);
+    digitalWrite(trigPin1, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin1, LOW);
 
-  if (!left && right) {
-    backLeft(150);
-  } else if (left && !right) {
-    backRight(150);
-  } else if (!left && !right) {
-    moveBackward(150);
-  } else {
-    float distance = readSensorData();
-    Serial.println(distance);
-    if (distance > 50) { // Safe
-      moveForward(200);
-    } else if (distance < 10 && distance > 2) { // Attention
-      moveBackward(200);
-      delay(1000);
-      backLeft(150);
-      delay(500);
-    } else {
-      moveForward(150);
-    }
+    duration = pulseIn(echoPin1, HIGH);
+
+    distance1 = duration * 0.034 / 2;
+    
+    
+    
+    digitalWrite(trigPin2, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(trigPin2, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin2, LOW);
+
+    duration = pulseIn(echoPin2, HIGH);
+
+    distance2 = duration * 0.034 / 2;
+
+
+
+
+    digitalWrite(trigPin3, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(trigPin3, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin3, LOW);
+
+    duration = pulseIn(echoPin3, HIGH);
+
+    distance3 = duration * 0.034 / 2;
+
+
+
+
+    digitalWrite(trigPin4, LOW);
+   delayMicroseconds(2);
+
+    digitalWrite(trigPin4, HIGH);
+    delayMicroseconds(10);
+   digitalWrite(trigPin4, LOW);
+
+    duration = pulseIn(echoPin4, HIGH);
+
+    distance4 = duration * 0.034 / 2;
+
+
+
+   
+    
+    Serial.print(" Distance Of Sensor 1:  ");
+    Serial.print(distance1);
+    Serial.print(" Distance of Sensor 2:  ");
+    Serial.print(distance2);
+    Serial.print(" Distance Of Sensor 3:  ");
+    Serial.print(distance3);
+     Serial.print(" Distance of Sensor 4:  ");
+    Serial.println(distance4);
+    
   }
+ 
+  
 }
+
 
 ```
 

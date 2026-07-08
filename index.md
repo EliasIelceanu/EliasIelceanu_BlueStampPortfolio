@@ -47,6 +47,8 @@ For your first milestone, describe what your project is and how you plan to buil
 - Challenges you're facing and solving in your future milestones
 - What your plan is to complete your project
 
+  For my first milestone, I made a car that is able to track black tape. The components that I used were 2 wheels, an arduino uno r3, and a 
+
 # Schematics 
 Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 
 
@@ -182,7 +184,7 @@ Don't forget to place the link of where to buy each component inside the quotati
 |:--:|:--:|:--:|:--:|
 | SunFounder Ultimate Starter Kit Compatible with Arduino UNO IDE Scratch, 3 in 1| This is the cit to build the self driving car | $59.99 | <a href="[https://www.amazon.com/Arduino-A000066-ARDUINO-UNO-R3/dp/B008GRTSV6/](https://www.amazon.com/dp/B0B778L1DZ?lv=shuf&channelId=500&plpRedirect=mhFallback)"> Link </a> |
 | Arduino Mega | This is one of the micro controllers for the project | $22.99 | <a href="https://www.amazon.com/ELEGOO-Compatible-Arduino-Projects-Compliant/dp/B01H4ZLZLQ/ref=sr_1_1?crid=2DMDC8DE4Q17O&dib=eyJ2IjoiMSJ9.7p3IEWq35-BhC7n2xPX9j_z4O4fOEa-f6EiV2WYTawSZ0qspE73EfIJD3EeU0BFKa5RIUUEOd8ZL_9-liu4TuGG4zGZaj-_iTLAsMBVXg5gAeEbCkla7aqVXZsWHSh8FI6Z8VUTzH6ZmJTbcRTk7OLEHUc3-k8DkjnY_t0CLul3vNutqy64RcqCdBhKflN3KB4uZPNvC5kXFQIhQM73rzyx7TRLmjdEKmaivCQrxT7E.FRkBUQzH1-ucwkDKRP2AznX1pAwwFonRQtns1BJ16pA&dib_tag=se&keywords=arduino%2Bmega%2Belegoo&qid=1783023442&sprefix=Arduino%2BMega%2Bel%2Caps%2C180&sr=8-1&th=1"> Link </a> |
-|Raspberry Pi | Main computer/micro controller  | $149.98 | <a href="https://www.amazon.com/CanaKit-Raspberry-4GB-Starter-Kit/dp/B07V5JTMV9/ref=sr_1_3?crid=7PTBDMO1I1V5&dib=eyJ2IjoiMSJ9.6RZammJY5JsyJpwezt2mn4zBZKs_BxKJe3yGU_gOfvdC3tTHtLhOYVdjowONRCydsJL4S6lT3n7l52zRjSyo8vzzRDnSe2xfwSNJt5zHwwPE9G3r8mM4cSIZ-ropS0DoCmliw-xSs1iHUXPyqQTHowSh2_toWKRMBXAHVWE3Xta-5S-xvUTJ7FjRO1BEO6IhzVCWUwwPhnCloAsni5mKy8Dci4ZJF9xlxAALqUpGM_c.hamNfze15YKY3whcmasYgrcS2BFijWTANosbQ1KIxwA&dib_tag=se&keywords=raspberry%2Bpi%2B4&qid=1783023558&sprefix=raspberry%2Bpi%2B4%2B%2Caps%2C182&sr=8-3&th=1"> Link </a> |
+| |   |  |  |
 
 # Other Resources/Examples
 One of the best parts about Github is that you can view how other people set up their own work. Here are some past BSE portfolios that are awesome examples. You can view how they set up their portfolio, and you can view their index.md files to understand how they implemented different portfolio components.

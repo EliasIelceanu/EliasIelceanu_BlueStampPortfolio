@@ -42,7 +42,7 @@ For your second milestone, explain what you've worked on since your previous mil
      
    - An Ultra Sonic Sensor is a sensor that can meassure distance or dected objects by emmiting high frequency sound waves. The transmitter generates high frequency sound waves (Typically around 40 kHz) and radiets them into the envoirment that the sensor is in. The receiver dectects these sound waves and converts them the waves into an electrical signal. This electrical signal obtained by the receiver get calculated and turned into a distance by the signal processing electronics in the sensor.
  
-     The IR sensors work in the car by dectecting weather there is an object infront 
+     The IR sensors work in the car by dectecting wether there is an object infront of the sensors  
 
     
 

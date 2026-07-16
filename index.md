@@ -41,6 +41,8 @@ For your second milestone, explain what you've worked on since your previous mil
    - An IR sensor is a sensor that dectects infared radiation, which is a type of invisible light emmited from objects based on their heat. The IR sensor has 2 main components, an IR LED and a IR photodiode. The IR LED emits the infared light and the IR photodiode dectects it. The IR photodiode is able to calculate the distance of an object based off of the light by generating an electrical signal that is proportional to the intensity of the light that it recived. The sensor then takes this information and uses it to calculate the distance of an object
      
    - An Ultra Sonic Sensor is a sensor that can meassure distance or dected objects by emmiting high frequency sound waves. The transmitter generates high frequency sound waves (Typically around 40 kHz) and radiets them into the envoirment that the sensor is in. The receiver dectects these sound waves and converts them the waves into an electrical signal. This electrical signal obtained by the receiver get calculated and turned into a distance by the signal processing electronics in the sensor.
+ 
+     The IR sensors work in the car by dectecting weather there is an object infront 
 
     
 

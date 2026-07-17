@@ -42,7 +42,7 @@ For your second milestone, explain what you've worked on since your previous mil
      
    - An Ultra Sonic Sensor is a sensor that can meassure distance or dected objects by emmiting high frequency sound waves. The transmitter generates high frequency sound waves (Typically around 40 kHz) and radiets them into the envoirment that the sensor is in. The receiver dectects these sound waves and converts them the waves into an electrical signal. This electrical signal obtained by the receiver get calculated and turned into a distance by the signal processing electronics in the sensor.
  
-     The IR sensors work in the car by dectecting wether there is an object infront of the sensors  
+     The IR sensors work in the car by dectecting wether there is an object infront of the sensors. If there is an object, the sensor emits a 1 in the code. If there isn't an object, the sensor emits a 0 in the code. At the very front of the is the ultra sonic sensors. The sensors are there so that it can make the car stop and turn around when there is an object 0-20 cm away. All of these sensors make the car be able to drive by itself.
 
     
 
@@ -58,8 +58,21 @@ For your first milestone, describe what your project is and how you plan to buil
 - Challenges you're facing and solving in your future milestones
 - What your plan is to complete your project
 
-    For my first milestone, I made a car that is able to track black tape and be able to follow it. It works by using a line tracking module that can track the color black. This sensor was connected to an Arduino Uno R3 using cables. This arduino was connected to a L9110 module which was connected to 2 TT motors. The purpose of the Arduino Uno R3 was so I could power and code the line tracking module. I coded the line tracking module in the Arduino IDE software. The language of this sofware is a modifed version of C++. The 2 TT motors were the motors that powered the wheels which made the car able to drive around using code. The purpose L9110 module is to make the coding and math easier when connecting the motors to the arduino.
-    All of this made it possible for when the car dectects the color black, then it would move left. But when it sees any other color, it would move right after some coding. The reason that I decided to use tape and not any other black object was because the sensor was connected to the frame of the car using some screws and small brakets. This made the sensor point toward the bottom so it didn't have a lot of options of what it could track and black tape was a reusable object near me that could produce strait lines when placed so I decided to use it.
+    For my first milestone, I made a car that is able to track black tape and be able to follow it. It works by using a line tracking module that can track the color black. This sensor was connected to an Arduino Uno R3 using cables. This arduino was connected to a L9110 module which was connected to 2 TT motors.
+    
+    - An L9100 module is a small circuit board that helps small computers like an Arduino control the speed and direction of motors.
+ 
+    - A TT motor is a DC gear motor that operates on 3V to 6V DC
+ 
+    - An Arduino Uno R3 is a small computer used to build electronics projects
+ 
+    - A line tracking module is a small sensor used by robots to follow a specific path. 
+
+
+  The purpose of the Arduino Uno R3 was so I could power and code the line tracking module. I coded the line tracking module in the Arduino IDE software. The language of this sofware is a modifed version of C++. The 2 TT motors were the motors that powered the wheels which made the car able to drive around using code. The purpose L9110 module is to make the coding and math easier when connecting the motors to the arduino.
+
+    All of these components made it possible for when the car dectects the color black, then it would move left. But when it sees any other color, it would move right after some coding. The reason that I decided to use tape and not any other black object was because the sensor was connected to the frame of the car using some screws and small brakets. This made the sensor point toward the bottom so it didn't have a lot of options of what it could track and black tape was a reusable object near me that could produce strait lines when placed so I decided to use it.
+
     Some challenges that I faced during this project was assebling all the wiring and making sure that the wires don't fall out of where they are supposed to go. I plan to solve this issue by soldering the wires to my sensors so it is much more reliable and so it won't fall out.
 # Schematics 
 Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 

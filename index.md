@@ -22,6 +22,12 @@ For your final milestone, explain the outcome of your project. Key details to in
 - A summary of key topics you learned about
 - What you hope to learn in the future after everything you've learned at BSE
 
+  For my final milestone, I decided to add a LiDAR inspired system to make the self driving a lot more reliable and accurate. I also added an Arduino Mega 2560 to replace the old Arduino Uno R3.
+
+  - A LiDAR is a light detection and ranging system that uses rapid laser pulses to measure distaces. By calculating how long it takes for the light to hit the surface and bounce back, it creates a highly accurate 3d map.
+ 
+  - An Arduino Mega is a high capacity micro controller that is a more powerful sibling of the stadard Arduino Uno
+  
 
 
 # Second Milestone
@@ -38,7 +44,7 @@ For your second milestone, explain what you've worked on since your previous mil
 
     For my second milestone, I made a self driving car. The car works by using 2 IR sensors on the sides and an ultra sonic sensor at the very front of the car that are all connected to an Arduino Uno R3. This Arduino is connected to a L9110 module that is connected to 2 TT Motors.
   
-   - An IR sensor is a sensor that dectects infared radiation, which is a type of invisible light emmited from objects based on their heat. The IR sensor has 2 main components, an IR LED and a IR photodiode. The IR LED emits the infared light and the IR photodiode dectects it. The IR photodiode is able to calculate the distance of an object based off of the light by generating an electrical signal that is proportional to the intensity of the light that it recived. The sensor then takes this information and uses it to calculate the distance of an object
+   - An IR sensor is a sensor that dectects infared radiation, which is a type of invisible light emmited from objects based on their heat. The IR sensor has 2 main components, an IR LED and a IR photodiode. The IR LED emits the infared light and the IR photodiode dectects it. The IR photodiode is able to calculate the distance of an object based off of the light by generating an electrical signal that is proportional to the intensity of the light that it recived. The sensor then takes this information and uses it to calculate the distance of an object.
      
    - An Ultra Sonic Sensor is a sensor that can meassure distance or dected objects by emmiting high frequency sound waves. The transmitter generates high frequency sound waves (Typically around 40 kHz) and radiets them into the envoirment that the sensor is in. The receiver dectects these sound waves and converts them the waves into an electrical signal. This electrical signal obtained by the receiver get calculated and turned into a distance by the signal processing electronics in the sensor.
  
@@ -62,9 +68,9 @@ For your first milestone, describe what your project is and how you plan to buil
     
     - An L9100 module is a small circuit board that helps small computers like an Arduino control the speed and direction of motors.
  
-    - A TT motor is a DC gear motor that operates on 3V to 6V DC
+    - A TT motor is a DC gear motor that operates on 3V to 6V DC.
  
-    - An Arduino Uno R3 is a small computer used to build electronics projects
+    - An Arduino Uno R3 is a small micro controller used to build electronics projects.
  
     - A line tracking module is a small sensor used by robots to follow a specific path. 
 
@@ -74,6 +80,8 @@ For your first milestone, describe what your project is and how you plan to buil
     All of these components made it possible for when the car dectects the color black, then it would move left. But when it sees any other color, it would move right after some coding. The reason that I decided to use tape and not any other black object was because the sensor was connected to the frame of the car using some screws and small brakets. This made the sensor point toward the bottom so it didn't have a lot of options of what it could track and black tape was a reusable object near me that could produce strait lines when placed so I decided to use it.
 
     Some challenges that I faced during this project was assebling all the wiring and making sure that the wires don't fall out of where they are supposed to go. I plan to solve this issue by soldering the wires to my sensors so it is much more reliable and so it won't fall out.
+
+
 # Schematics 
 Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 
 

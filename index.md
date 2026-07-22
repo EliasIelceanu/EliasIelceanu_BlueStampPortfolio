@@ -90,122 +90,971 @@ Here's where you'll put your code. The syntax below places it into a block of co
 
 ```c++
 #include <Servo.h>
+#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <avr/wdt.h>
 
-Servo myServo;
+// ============================================================
+// HARDWARE OBJECTS
+// ============================================================
 
-long duration;
+Servo scanningServo;
+Adafruit_MPU6050 mpu;
 
-int distance1;
-int distance2;
-int distance3;
-int distance4;
+// ============================================================
+// PIN CONFIGURATION
+// ============================================================
 
-const int trigPin1 = 12;
-const int echoPin1 = 13;
+// Ultrasonic Sensor 1
+const int TRIG_PIN_1 = 12;
+const int ECHO_PIN_1 = 13;
 
-const int trigPin2 = 8;
-const int echoPin2 = 9;
+// Ultrasonic Sensor 2
+const int TRIG_PIN_2 = 8;
+const int ECHO_PIN_2 = 9;
 
-const int trigPin3 = 10;
-const int echoPin3 = 11;
+// Ultrasonic Sensor 3
+const int TRIG_PIN_3 = 10;
+const int ECHO_PIN_3 = 11;
 
-const int trigPin4 = 44;
-const int echoPin4 = 45;
+// Ultrasonic Sensor 4
+const int TRIG_PIN_4 = 27;
+const int ECHO_PIN_4 = 26;
+
+// Servo
+const int SERVO_PIN = 7;
+
+// Motor A: right wheel
+const int A_1B = 51;
+const int A_1A = 50;
+
+// Motor B: left wheel
+const int B_1B = 53;
+const int B_1A = 52;
+
+// ============================================================
+// SCANNING CONFIGURATION
+// ============================================================
+
+const int SCAN_START_ANGLE = 0;
+const int SCAN_END_ANGLE = 85;
+const int SCAN_ANGLE_STEP = 5;
+
+const int NUM_SCAN_STEPS =
+  ((SCAN_END_ANGLE - SCAN_START_ANGLE) / SCAN_ANGLE_STEP) + 1;
+
+const int GROUP_SIZE = 3;
+const int NUM_GROUPS = NUM_SCAN_STEPS / GROUP_SIZE;
+
+// Time given to the servo after each movement.
+const unsigned long SERVO_STEP_DELAY_MS = 20;
+
+// Time given to the servo for a large reset movement.
+const unsigned long SERVO_RESET_DELAY_MS = 250;
+
+// Maximum ultrasonic echo wait time.
+//
+// 25,000 microseconds corresponds to roughly 425 cm.
+// A timeout prevents one missing echo from freezing the scan.
+const unsigned long ULTRASONIC_TIMEOUT_US = 25000;
+
+// Reading used when the sensor receives no echo.
+const float MAX_DISTANCE_CM = 400.0;
+
+// Small pause between ultrasonic sensors to reduce interference.
+const unsigned int SENSOR_GAP_US = 800;
+
+// ============================================================
+// MOVEMENT CONFIGURATION
+// ============================================================
+
+// Servo angle representing straight ahead.
+// Recalibrate this value if necessary.
+const int CENTER_ANGLE = 42;
+
+// Stop turning when this close to the desired angle.
+const float ANGLE_MARGIN_DEGREES = 5.0;
+
+// Maximum time allowed for one turn.
+const unsigned long ROTATE_TIMEOUT_MS = 2500;
+
+// How long the car moves after choosing a direction.
+const unsigned long DRIVE_DURATION_MS = 2000;
+
+// Obstacle behavior.
+const float BOXED_IN_DISTANCE_CM = 10.0;
+const float CLOSE_PROXIMITY_DISTANCE_CM = 10.0;
+const int CLOSE_SENSOR_THRESHOLD = 3;
+
+const unsigned long BACKUP_TIME_MS = 800;
+const unsigned long ESCAPE_ROTATE_TIME_MS = 600;
+
+// Brief motor pause before starting a turn.
+const unsigned long MOTOR_DIRECTION_DELAY_MS = 30;
+
+// Ignore extremely small gyro readings while integrating.
+const float GYRO_DEAD_ZONE_DPS = 1.5;
+
+// ============================================================
+// TURNING DIRECTION CONFIGURATION
+// ============================================================
+
+// Set either of these to true if that movement is physically reversed.
+//
+// For example, if turnLeft() makes the car rotate right, change
+// REVERSE_TURN_DIRECTIONS to true.
+const bool REVERSE_TURN_DIRECTIONS = false;
+
+// If the measured gyro angle does not increase while the car turns,
+// change this to true.
+const bool REVERSE_GYRO_SIGN = false;
+
+// Your original code treated target angles greater than CENTER_ANGLE
+// as left turns because the turret was mounted in reverse.
+const bool HIGHER_SERVO_ANGLE_MEANS_LEFT = true;
+
+// ============================================================
+// DATA STRUCTURES
+// ============================================================
+
+struct UltrasonicSensor {
+  int trigPin;
+  int echoPin;
+  float distance;
+
+  void begin() {
+    pinMode(trigPin, OUTPUT);
+    pinMode(echoPin, INPUT);
+
+    digitalWrite(trigPin, LOW);
+  }
+
+  void update() {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+
+    digitalWrite(trigPin, LOW);
+
+    unsigned long duration =
+      pulseIn(echoPin, HIGH, ULTRASONIC_TIMEOUT_US);
+
+    if (duration == 0) {
+      // No echo arrived before the timeout.
+      distance = MAX_DISTANCE_CM;
+    } else {
+      distance = duration * 0.0343 / 2.0;
+
+      if (distance > MAX_DISTANCE_CM) {
+        distance = MAX_DISTANCE_CM;
+      }
+    }
+  }
+
+  float getDistance() const {
+    return distance;
+  }
+};
+
+struct Packet {
+  float sensor1;
+  float sensor2;
+  float sensor3;
+  float sensor4;
+};
+
+struct Reading {
+  int angle;
+  float distance;
+};
+
+struct Group {
+  int angle;
+  float average;
+};
+
+// ============================================================
+// SENSOR OBJECTS
+// ============================================================
+
+UltrasonicSensor sensor1 = {
+  TRIG_PIN_1,
+  ECHO_PIN_1,
+  MAX_DISTANCE_CM
+};
+
+UltrasonicSensor sensor2 = {
+  TRIG_PIN_2,
+  ECHO_PIN_2,
+  MAX_DISTANCE_CM
+};
+
+UltrasonicSensor sensor3 = {
+  TRIG_PIN_3,
+  ECHO_PIN_3,
+  MAX_DISTANCE_CM
+};
+
+UltrasonicSensor sensor4 = {
+  TRIG_PIN_4,
+  ECHO_PIN_4,
+  MAX_DISTANCE_CM
+};
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+
+float bestDistanceFound = 0.0;
+float gyroZBiasDps = 0.0;
+
+// ============================================================
+// MOTOR CONTROL
+// ============================================================
+
+void beginMotors() {
+  pinMode(A_1B, OUTPUT);
+  pinMode(A_1A, OUTPUT);
+  pinMode(B_1B, OUTPUT);
+  pinMode(B_1A, OUTPUT);
+
+  digitalWrite(A_1B, LOW);
+  digitalWrite(A_1A, LOW);
+  digitalWrite(B_1B, LOW);
+  digitalWrite(B_1A, LOW);
+}
+
+void stopCar() {
+  digitalWrite(A_1B, LOW);
+  digitalWrite(A_1A, LOW);
+  digitalWrite(B_1B, LOW);
+  digitalWrite(B_1A, LOW);
+}
+
+void moveForward() {
+  // Right motor forward
+  digitalWrite(A_1B, LOW);
+  digitalWrite(A_1A, HIGH);
+
+  // Left motor forward
+  digitalWrite(B_1B, HIGH);
+  digitalWrite(B_1A, LOW);
+}
+
+void moveBackward() {
+  // Right motor backward
+  digitalWrite(A_1B, HIGH);
+  digitalWrite(A_1A, LOW);
+
+  // Left motor backward
+  digitalWrite(B_1B, LOW);
+  digitalWrite(B_1A, HIGH);
+}
+
+void rawTurnRight() {
+  // Right wheel backward
+  digitalWrite(A_1B, HIGH);
+  digitalWrite(A_1A, LOW);
+
+  // Left wheel forward
+  digitalWrite(B_1B, HIGH);
+  digitalWrite(B_1A, LOW);
+}
+
+void rawTurnLeft() {
+  // Right wheel forward
+  digitalWrite(A_1B, LOW);
+  digitalWrite(A_1A, HIGH);
+
+  // Left wheel backward
+  digitalWrite(B_1B, LOW);
+  digitalWrite(B_1A, HIGH);
+}
+
+void turnRight() {
+  if (REVERSE_TURN_DIRECTIONS) {
+    rawTurnLeft();
+  } else {
+    rawTurnRight();
+  }
+}
+
+void turnLeft() {
+  if (REVERSE_TURN_DIRECTIONS) {
+    rawTurnRight();
+  } else {
+    rawTurnLeft();
+  }
+}
+
+// ============================================================
+// IMU AND GYROSCOPE
+// ============================================================
+
+float readRawYawRateDps() {
+  sensors_event_t acceleration;
+  sensors_event_t gyro;
+  sensors_event_t temperature;
+
+  mpu.getEvent(&acceleration, &gyro, &temperature);
+
+  return gyro.gyro.z * 180.0 / PI;
+}
+
+float getYawRateDps() {
+  float yawRate = readRawYawRateDps() - gyroZBiasDps;
+
+  if (REVERSE_GYRO_SIGN) {
+    yawRate = -yawRate;
+  }
+
+  if (abs(yawRate) < GYRO_DEAD_ZONE_DPS) {
+    yawRate = 0.0;
+  }
+
+  return yawRate;
+}
+
+void calibrateGyroscope() {
+  Serial.println("Calibrating gyroscope...");
+  Serial.println("Keep the car completely still.");
+
+  stopCar();
+
+  const int calibrationSamples = 300;
+  float total = 0.0;
+
+  for (int i = 0; i < calibrationSamples; i++) {
+    total += readRawYawRateDps();
+
+    if (i % 50 == 0) {
+      wdt_reset();
+    }
+
+    delay(5);
+  }
+
+  gyroZBiasDps = total / calibrationSamples;
+
+  Serial.print("Gyroscope Z bias: ");
+  Serial.print(gyroZBiasDps, 4);
+  Serial.println(" degrees/second");
+}
+
+// ============================================================
+// ULTRASONIC SENSOR READING
+// ============================================================
+
+Packet readAllSensors() {
+  Packet packet;
+
+  sensor1.update();
+  packet.sensor1 = sensor1.getDistance();
+
+  delayMicroseconds(SENSOR_GAP_US);
+
+  sensor2.update();
+  packet.sensor2 = sensor2.getDistance();
+
+  delayMicroseconds(SENSOR_GAP_US);
+
+  sensor3.update();
+  packet.sensor3 = sensor3.getDistance();
+
+  delayMicroseconds(SENSOR_GAP_US);
+
+  sensor4.update();
+  packet.sensor4 = sensor4.getDistance();
+
+  return packet;
+}
+
+int countCloseSensors(const Packet &packet) {
+  int count = 0;
+
+  if (
+    packet.sensor1 > 0 &&
+    packet.sensor1 <= CLOSE_PROXIMITY_DISTANCE_CM
+  ) {
+    count++;
+  }
+
+  if (
+    packet.sensor2 > 0 &&
+    packet.sensor2 <= CLOSE_PROXIMITY_DISTANCE_CM
+  ) {
+    count++;
+  }
+
+  if (
+    packet.sensor3 > 0 &&
+    packet.sensor3 <= CLOSE_PROXIMITY_DISTANCE_CM
+  ) {
+    count++;
+  }
+
+  if (
+    packet.sensor4 > 0 &&
+    packet.sensor4 <= CLOSE_PROXIMITY_DISTANCE_CM
+  ) {
+    count++;
+  }
+
+  return count;
+}
+
+// ============================================================
+// SCAN PROCESSING
+// ============================================================
+
+void groupSensorReadings(
+  Reading readings[],
+  int readingCount,
+  Group groups[]
+) {
+  int groupIndex = 0;
+
+  for (
+    int startIndex = 0;
+    startIndex + GROUP_SIZE - 1 < readingCount;
+    startIndex += GROUP_SIZE
+  ) {
+    float total = 0.0;
+
+    for (int offset = 0; offset < GROUP_SIZE; offset++) {
+      total += readings[startIndex + offset].distance;
+    }
+
+    int middleIndex = startIndex + GROUP_SIZE / 2;
+
+    groups[groupIndex].angle =
+      readings[middleIndex].angle;
+
+    groups[groupIndex].average =
+      total / GROUP_SIZE;
+
+    groupIndex++;
+  }
+}
+
+void printLargestGroup(
+  const char *sensorName,
+  Group groups[]
+) {
+  float largestDistance = groups[0].average;
+  int largestAngle = groups[0].angle;
+
+  for (int groupIndex = 1; groupIndex < NUM_GROUPS; groupIndex++) {
+    if (groups[groupIndex].average > largestDistance) {
+      largestDistance = groups[groupIndex].average;
+      largestAngle = groups[groupIndex].angle;
+    }
+  }
+
+  Serial.print(sensorName);
+  Serial.print(" largest group: ");
+  Serial.print(largestDistance, 1);
+  Serial.print(" cm at angle ");
+  Serial.println(largestAngle);
+}
+
+void considerGroup(
+  const Group &group,
+  float &bestDistance,
+  int &bestAngle
+) {
+  if (group.average > bestDistance) {
+    bestDistance = group.average;
+    bestAngle = group.angle;
+  }
+}
+
+int findOverallBestAngle(
+  Group sensor1Groups[],
+  Group sensor2Groups[],
+  Group sensor3Groups[],
+  Group sensor4Groups[]
+) {
+  float bestDistance = -1.0;
+  int bestAngle = CENTER_ANGLE;
+
+  for (int groupIndex = 0; groupIndex < NUM_GROUPS; groupIndex++) {
+    considerGroup(
+      sensor1Groups[groupIndex],
+      bestDistance,
+      bestAngle
+    );
+
+    considerGroup(
+      sensor4Groups[groupIndex],
+      bestDistance,
+      bestAngle
+    );
+
+    // Preserve your original behavior:
+    // ignore the first group for Sensors 2 and 3 because those
+    // sensors face backward at the beginning of the sweep.
+    if (groupIndex != 0) {
+      considerGroup(
+        sensor2Groups[groupIndex],
+        bestDistance,
+        bestAngle
+      );
+
+      considerGroup(
+        sensor3Groups[groupIndex],
+        bestDistance,
+        bestAngle
+      );
+    }
+  }
+
+  bestDistanceFound = bestDistance;
+
+  return bestAngle;
+}
+
+int processScan(
+  Packet scanData[],
+  int scanCount
+) {
+  Reading readings1[NUM_SCAN_STEPS];
+  Reading readings2[NUM_SCAN_STEPS];
+  Reading readings3[NUM_SCAN_STEPS];
+  Reading readings4[NUM_SCAN_STEPS];
+
+  for (int index = 0; index < scanCount; index++) {
+    int angle =
+      SCAN_START_ANGLE + index * SCAN_ANGLE_STEP;
+
+    readings1[index] = {
+      angle,
+      scanData[index].sensor1
+    };
+
+    readings2[index] = {
+      angle,
+      scanData[index].sensor2
+    };
+
+    readings3[index] = {
+      angle,
+      scanData[index].sensor3
+    };
+
+    readings4[index] = {
+      angle,
+      scanData[index].sensor4
+    };
+  }
+
+  Group groups1[NUM_GROUPS];
+  Group groups2[NUM_GROUPS];
+  Group groups3[NUM_GROUPS];
+  Group groups4[NUM_GROUPS];
+
+  groupSensorReadings(
+    readings1,
+    scanCount,
+    groups1
+  );
+
+  groupSensorReadings(
+    readings2,
+    scanCount,
+    groups2
+  );
+
+  groupSensorReadings(
+    readings3,
+    scanCount,
+    groups3
+  );
+
+  groupSensorReadings(
+    readings4,
+    scanCount,
+    groups4
+  );
+
+  printLargestGroup("SENSOR 1", groups1);
+  printLargestGroup("SENSOR 2", groups2);
+  printLargestGroup("SENSOR 3", groups3);
+  printLargestGroup("SENSOR 4", groups4);
+
+  int bestAngle = findOverallBestAngle(
+    groups1,
+    groups2,
+    groups3,
+    groups4
+  );
+
+  Serial.print("Best angle: ");
+  Serial.print(bestAngle);
+
+  Serial.print(" | Best distance: ");
+  Serial.print(bestDistanceFound, 1);
+
+  Serial.println(" cm");
+
+  return bestAngle;
+}
+
+// ============================================================
+// TURNING
+// ============================================================
+
+void rotateToAngle(int targetAngle) {
+  int servoDifference = targetAngle - CENTER_ANGLE;
+  float requestedTurnDegrees = abs(servoDifference);
+
+  Serial.println();
+  Serial.println("Beginning rotation");
+
+  Serial.print("Target servo angle: ");
+  Serial.println(targetAngle);
+
+  Serial.print("Center servo angle: ");
+  Serial.println(CENTER_ANGLE);
+
+  Serial.print("Requested physical turn: ");
+  Serial.print(requestedTurnDegrees, 1);
+  Serial.println(" degrees");
+
+  if (requestedTurnDegrees <= ANGLE_MARGIN_DEGREES) {
+    Serial.println("Direction is already approximately forward.");
+    stopCar();
+    return;
+  }
+
+  bool shouldTurnLeft;
+
+  if (HIGHER_SERVO_ANGLE_MEANS_LEFT) {
+    shouldTurnLeft = servoDifference > 0;
+  } else {
+    shouldTurnLeft = servoDifference < 0;
+  }
+
+  stopCar();
+  delay(MOTOR_DIRECTION_DELAY_MS);
+
+  if (shouldTurnLeft) {
+    Serial.println("Turning left");
+    turnLeft();
+  } else {
+    Serial.println("Turning right");
+    turnRight();
+  }
+
+  float accumulatedDegrees = 0.0;
+
+  unsigned long rotationStart = micros();
+  unsigned long previousReadingTime = rotationStart;
+  unsigned long previousPrintTime = millis();
+
+  while (accumulatedDegrees <
+         requestedTurnDegrees - ANGLE_MARGIN_DEGREES) {
+    wdt_reset();
+
+    unsigned long nowMicros = micros();
+    unsigned long elapsedMicros =
+      nowMicros - previousReadingTime;
+
+    previousReadingTime = nowMicros;
+
+    float deltaTimeSeconds =
+      elapsedMicros / 1000000.0;
+
+    float yawRateDps = getYawRateDps();
+
+    // We already selected the direction using the target angle.
+    // Accumulating the magnitude prevents a gyro sign mismatch from
+    // causing the turn loop to run forever.
+    accumulatedDegrees +=
+      abs(yawRateDps) * deltaTimeSeconds;
+
+    unsigned long elapsedRotationMs =
+      (nowMicros - rotationStart) / 1000UL;
+
+    if (millis() - previousPrintTime >= 100) {
+      Serial.print("Yaw rate: ");
+      Serial.print(yawRateDps, 1);
+
+      Serial.print(" dps | Turned: ");
+      Serial.print(accumulatedDegrees, 1);
+
+      Serial.print(" / ");
+      Serial.println(requestedTurnDegrees, 1);
+
+      previousPrintTime = millis();
+    }
+
+    if (elapsedRotationMs >= ROTATE_TIMEOUT_MS) {
+      Serial.println("Rotation timeout reached.");
+      break;
+    }
+
+    delay(2);
+  }
+
+  stopCar();
+
+  Serial.print("Rotation finished after approximately ");
+  Serial.print(accumulatedDegrees, 1);
+  Serial.println(" degrees");
+
+  delay(100);
+}
+
+// ============================================================
+// OBSTACLE RESPONSE
+// ============================================================
+
+void handleImmediateProximity() {
+  Serial.println();
+  Serial.println("Three or more sensors detected a close obstacle.");
+
+  stopCar();
+
+  scanningServo.write(CENTER_ANGLE);
+  wdt_reset();
+  delay(SERVO_RESET_DELAY_MS);
+
+  Serial.println("Backing away.");
+
+  moveBackward();
+
+  unsigned long backupStart = millis();
+
+  while (millis() - backupStart < BACKUP_TIME_MS) {
+    wdt_reset();
+    delay(5);
+  }
+
+  stopCar();
+}
+
+void handleBoxedIn() {
+  Serial.println();
+  Serial.println("Best direction is blocked.");
+  Serial.println("Checking the rear before backing up.");
+
+  sensor2.update();
+  delayMicroseconds(SENSOR_GAP_US);
+  sensor3.update();
+
+  float rearDistance = min(
+    sensor2.getDistance(),
+    sensor3.getDistance()
+  );
+
+  Serial.print("Rear distance: ");
+  Serial.print(rearDistance, 1);
+  Serial.println(" cm");
+
+  if (rearDistance > BOXED_IN_DISTANCE_CM) {
+    Serial.println("Rear is clear. Backing up.");
+
+    moveBackward();
+
+    unsigned long backupStart = millis();
+
+    while (millis() - backupStart < BACKUP_TIME_MS) {
+      wdt_reset();
+      delay(5);
+    }
+
+    stopCar();
+  } else {
+    // Do not permanently freeze here. The original boxed-in
+    // condition could enter a permanent stop whenever the rear
+    // was also blocked.
+    Serial.println("Rear is blocked. Performing escape rotation.");
+
+    turnRight();
+
+    unsigned long escapeStart = millis();
+
+    while (
+      millis() - escapeStart < ESCAPE_ROTATE_TIME_MS
+    ) {
+      wdt_reset();
+      delay(5);
+    }
+
+    stopCar();
+  }
+
+  scanningServo.write(SCAN_START_ANGLE);
+  wdt_reset();
+  delay(SERVO_RESET_DELAY_MS);
+}
+
+// ============================================================
+// DRIVING
+// ============================================================
+
+void driveForwardForConfiguredTime() {
+  Serial.println();
+  Serial.print("Driving forward for ");
+  Serial.print(DRIVE_DURATION_MS);
+  Serial.println(" ms");
+
+  moveForward();
+
+  unsigned long driveStart = millis();
+
+  while (millis() - driveStart < DRIVE_DURATION_MS) {
+    wdt_reset();
+    delay(5);
+  }
+
+  stopCar();
+
+  Serial.println("Forward movement finished.");
+}
+
+// ============================================================
+// SETUP
+// ============================================================
 
 void setup() {
-  Serial.begin(9600);
-  myServo.attach(7);    
-  
-  pinMode(trigPin1, OUTPUT);
-  pinMode(echoPin1, INPUT);
+  Serial.begin(115200);
 
-  pinMode(trigPin2, OUTPUT);
-  pinMode(echoPin2, INPUT);
+  scanningServo.attach(SERVO_PIN);
 
-  pinMode(trigPin3, OUTPUT);
-  pinMode(echoPin3, INPUT);
+  sensor1.begin();
+  sensor2.begin();
+  sensor3.begin();
+  sensor4.begin();
 
-  pinMode(trigPin4, OUTPUT);
-  pinMode(echoPin4, INPUT);
+  beginMotors();
+  stopCar();
+
+  scanningServo.write(SCAN_START_ANGLE);
+  delay(SERVO_RESET_DELAY_MS);
+
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050.");
+
+    while (true) {
+      delay(100);
+    }
+  }
+
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  Serial.println("MPU6050 found.");
+
+  // Enable after sensor initialization so setup does not reset
+  // during the initial connection process.
+  wdt_enable(WDTO_2S);
+
+  calibrateGyroscope();
+
+  Serial.println();
+  Serial.println("Robot ready.");
 }
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
 
 void loop() {
-  for (int i = 0; i<90; i+=5){
-    myServo.write(i);
-    delay(250);
-    
-    
-    
-    digitalWrite(trigPin1, LOW);
-    delayMicroseconds(2);
+  wdt_reset();
 
-    digitalWrite(trigPin1, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin1, LOW);
+  Serial.println();
+  Serial.println("========================================");
+  Serial.println("Starting new scan cycle");
+  Serial.println("========================================");
 
-    duration = pulseIn(echoPin1, HIGH);
+  stopCar();
 
-    distance1 = duration * 0.034 / 2;
-    
-    
-    
-    digitalWrite(trigPin2, LOW);
-    delayMicroseconds(2);
+  Packet scanData[NUM_SCAN_STEPS];
 
-    digitalWrite(trigPin2, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin2, LOW);
+  int scanIndex = 0;
+  bool scanInterrupted = false;
 
-    duration = pulseIn(echoPin2, HIGH);
+  unsigned long scanStartTime = millis();
 
-    distance2 = duration * 0.034 / 2;
+  for (
+    int servoAngle = SCAN_START_ANGLE;
+    servoAngle <= SCAN_END_ANGLE;
+    servoAngle += SCAN_ANGLE_STEP
+  ) {
+    wdt_reset();
 
+    scanningServo.write(servoAngle);
+    delay(SERVO_STEP_DELAY_MS);
 
+    Packet packet = readAllSensors();
 
+    scanData[scanIndex] = packet;
+    scanIndex++;
 
-    digitalWrite(trigPin3, LOW);
-    delayMicroseconds(2);
+    Serial.print("Angle ");
+    Serial.print(servoAngle);
 
-    digitalWrite(trigPin3, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin3, LOW);
+    Serial.print(" | S1: ");
+    Serial.print(packet.sensor1, 1);
 
-    duration = pulseIn(echoPin3, HIGH);
+    Serial.print(" | S2: ");
+    Serial.print(packet.sensor2, 1);
 
-    distance3 = duration * 0.034 / 2;
+    Serial.print(" | S3: ");
+    Serial.print(packet.sensor3, 1);
 
+    Serial.print(" | S4: ");
+    Serial.println(packet.sensor4, 1);
 
-
-
-    digitalWrite(trigPin4, LOW);
-   delayMicroseconds(2);
-
-    digitalWrite(trigPin4, HIGH);
-    delayMicroseconds(10);
-   digitalWrite(trigPin4, LOW);
-
-    duration = pulseIn(echoPin4, HIGH);
-
-    distance4 = duration * 0.034 / 2;
-
-
-
-   
-    
-    Serial.print(" Distance Of Sensor 1:  ");
-    Serial.print(distance1);
-    Serial.print(" Distance of Sensor 2:  ");
-    Serial.print(distance2);
-    Serial.print(" Distance Of Sensor 3:  ");
-    Serial.print(distance3);
-     Serial.print(" Distance of Sensor 4:  ");
-    Serial.println(distance4);
-    
+    if (
+      countCloseSensors(packet) >=
+      CLOSE_SENSOR_THRESHOLD
+    ) {
+      handleImmediateProximity();
+      scanInterrupted = true;
+      break;
+    }
   }
- 
-  
-}
 
+  unsigned long scanDuration =
+    millis() - scanStartTime;
+
+  Serial.print("Scan duration: ");
+  Serial.print(scanDuration);
+  Serial.println(" ms");
+
+  if (scanInterrupted) {
+    scanningServo.write(SCAN_START_ANGLE);
+    wdt_reset();
+    delay(SERVO_RESET_DELAY_MS);
+    return;
+  }
+
+  int bestAngle =
+    processScan(scanData, scanIndex);
+
+  if (
+    bestDistanceFound <
+    BOXED_IN_DISTANCE_CM
+  ) {
+    handleBoxedIn();
+    return;
+  }
+
+  rotateToAngle(bestAngle);
+
+  // Return the sensor assembly to the beginning of its sweep
+  // while the car is about to drive.
+  scanningServo.write(SCAN_START_ANGLE);
+
+  driveForwardForConfiguredTime();
+}
 
 ```
 
